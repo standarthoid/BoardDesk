@@ -11,6 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Dist-Ordner erstellen
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+          cp boarddesk-tauri-bridge.js dist/
+
       - name: Rust installieren
         uses: dtolnay/rust-toolchain@stable
 
@@ -20,8 +26,6 @@ jobs:
       - name: Windows Build
         run: cargo tauri build
         working-directory: src-tauri
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ""
 
       - name: Installer hochladen
         uses: actions/upload-artifact@v4

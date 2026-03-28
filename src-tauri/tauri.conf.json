@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "BoardDesk",
   "version": "0.1.0",
-  "identifier": "com.boarddesk.app",
+  "identifier": "com.boarddesk.desktop",
   "app": {
     "windows": [
       {
@@ -25,7 +25,7 @@
     "beforeBuildCommand": "",
     "beforeDevCommand": "python3 -m http.server 1420 --directory /Users/miriamhanke/Downloads/BoardDesk",
     "devUrl": "http://localhost:1420",
-    "frontendDist": "../"
+    "frontendDist": "../dist"
   },
   "bundle": {
     "active": true,
