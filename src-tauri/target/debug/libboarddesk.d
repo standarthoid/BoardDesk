@@ -1,0 +1,1 @@
+/Users/miriamhanke/Downloads/BoardDesk/src-tauri/target/debug/libboarddesk.rlib: /Users/miriamhanke/Downloads/BoardDesk/src-tauri/build.rs /Users/miriamhanke/Downloads/BoardDesk/src-tauri/capabilities /Users/miriamhanke/Downloads/BoardDesk/src-tauri/src/lib.rs /Users/miriamhanke/Downloads/BoardDesk/src-tauri/tauri.conf.json
