@@ -1,0 +1,32 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust installieren
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Tauri CLI installieren
+        run: cargo install tauri-cli
+
+      - name: Windows Build
+        run: cargo tauri build
+        working-directory: src-tauri
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ""
+
+      - name: Installer hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: BoardDesk-Windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
