@@ -25,8 +25,8 @@
   --text:#e8eaf0;--text-dim:#7a7f94;--text-dimmer:#454a5c;
   --radius:10px;--shadow:0 8px 32px rgba(0,0,0,.5);
   --header-h:46px;
-  --wco-top: env(titlebar-area-y, 0px);
-  --wco-h: env(titlebar-area-height, 0px);
+  --wco-top: 0px;
+  --wco-h: 0px;
   --mono:'Cascadia Code','JetBrains Mono','Fira Code',Consolas,'Courier New',monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Segoe UI Variable',Ubuntu,Cantarell,'Helvetica Neue',Arial,sans-serif;
 }
@@ -45,18 +45,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
 /* ── HEADER ── */
 #header{
-  position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:1000;
+  position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:10000;touch-action:auto;
   display:flex;align-items:center;padding:0 14px;gap:8px;
   background:rgba(14,15,17,.93);border-bottom:1px solid var(--border);
   backdrop-filter:blur(12px);transition:transform .3s;
-  /* Window Controls Overlay: extend header into title bar */
-  top: var(--wco-top);
-  height: calc(var(--header-h) + var(--wco-h));
-  padding-top: var(--wco-h);
-  -webkit-app-region: drag;
+  top: 0;
+  height: var(--header-h);
+  padding-top: 0;
+  /* -webkit-app-region: drag; — deaktiviert wegen Windows-Kompatibilität */
 }
 /* Buttons must NOT be draggable */
-#header button, #header input, #header select { -webkit-app-region: no-drag; }
+/* #header button, #header input, #header select { -webkit-app-region: no-drag; } */
 #header.hidden{transform:translateY(calc(-1 * var(--header-h)));}
 #board-name-display{
   font-size:13px;color:var(--text-dim);font-family:var(--mono);
@@ -81,7 +80,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
 /* ── CANVAS ── */
 #canvas-wrap{
-  position:fixed;inset:0;top:calc(var(--header-h) + var(--wco-h));overflow:hidden;cursor:default;
+  position:fixed;top:var(--header-h);left:0;right:0;bottom:0;overflow:hidden;cursor:default;z-index:1;
   z-index:1;transition:top .3s;background:transparent;touch-action:none;
 }
 #canvas-wrap.presentation{top:0 !important;}
@@ -264,7 +263,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 /* ── STROKE PICKER ── */
 #text-picker{
   display:none;position:fixed;bottom:84px;left:50%;transform:translateX(-50%);
-  z-index:1300;background:var(--surface);border:1px solid var(--border);
+  touch-action:auto;z-index:10001;background:var(--surface);border:1px solid var(--border);
   border-radius:10px;padding:10px 14px;min-width:320px;
   box-shadow:0 8px 32px rgba(0,0,0,.5);flex-direction:column;gap:6px;
 }
@@ -286,14 +285,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .sp-mb:hover,.sp-mb.active{background:var(--surface2);color:var(--accent);border-color:var(--accent);}
 
 /* ── SIDE PANEL ── */
-#side-panel{position:fixed;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:3px;background:var(--surface);border:1px solid var(--border-hi);border-radius:13px;padding:5px;box-shadow:var(--shadow);z-index:1000;transition:opacity .3s;}
+#side-panel{position:fixed;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:3px;background:var(--surface);border:1px solid var(--border-hi);border-radius:13px;padding:5px;box-shadow:var(--shadow);touch-action:auto;z-index:10002;transition:opacity .3s;}
 #side-panel.hidden{opacity:0;pointer-events:none;}
 .side-btn{width:34px;height:34px;border-radius:7px;border:none;background:transparent;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
 .side-btn:hover{background:var(--surface2);color:var(--text);}
 .side-sep{height:1px;background:var(--border);margin:2px 0;}
 
 /* ── ZOOM ── */
-#mini-ctrl{position:fixed;right:12px;bottom:22px;display:flex;flex-direction:column;gap:3px;z-index:1000;transition:opacity .3s;}
+#mini-ctrl{position:fixed;right:12px;bottom:22px;display:flex;flex-direction:column;gap:3px;touch-action:auto;z-index:10003;transition:opacity .3s;}
 #mini-ctrl.hidden{opacity:0;pointer-events:none;}
 .mini-btn{width:30px;height:30px;border-radius:7px;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .mini-btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -385,8 +384,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
   display:flex;flex-direction:column;
   box-shadow:4px 0 32px rgba(0,0,0,.6);
   transform:translateX(-100%);transition:transform .25s ease;
+  pointer-events:none;
 }
-#board-panel.open { transform:translateX(0); }
+#board-panel.open { transform:translateX(0); pointer-events:all; }
 #bp-header { padding:14px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0; }
 #bp-title { font-size:13px;font-weight:700;color:var(--text); }
 #bp-close { width:28px;height:28px;border-radius:6px;border:none;background:transparent;color:var(--text-dim);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s; }
@@ -429,6 +429,64 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 #toolbar{touch-action:manipulation;}
 #header{touch-action:manipulation;}
 </style>
+<script>
+// Windows WebView2 Event-Delegation
+document.addEventListener('DOMContentLoaded', function() {
+  function runHandler(el, attr) {
+    while (el && el !== document.body) {
+      var h = el.getAttribute(attr);
+      if (h) {
+        var fm = h.match(/document\.getElementById\('([^']+)'\)\.click\(\)/);
+        if (fm) { var inp = document.getElementById(fm[1]); if (inp) { inp.click(); return; } }
+        try { (new Function(h)).call(el); } catch(err) { console.error(attr+':', err, h); }
+        return;
+      }
+      el = el.parentElement;
+    }
+  }
+
+  // Click (Maus) + pointerup (Touch/Stift auf Windows)
+  var _lastPointerDown = null;
+  document.addEventListener('pointerdown', function(e) {
+    _lastPointerDown = {x: e.clientX, y: e.clientY, target: e.target, time: Date.now()};
+  }, true);
+
+  document.addEventListener('pointerup', function(e) {
+    if (!_lastPointerDown) return;
+    var dx = Math.abs(e.clientX - _lastPointerDown.x);
+    var dy = Math.abs(e.clientY - _lastPointerDown.y);
+    var dt = Date.now() - _lastPointerDown.time;
+    // Nur bei kurzem Tap ohne Bewegung (kein Drag)
+    if (dx < 8 && dy < 8 && dt < 600) {
+      // Warte kurz damit click-Event zuerst kommen kann
+      setTimeout(function() { runHandler(e.target, 'data-onclick'); }, 10);
+    }
+    _lastPointerDown = null;
+  }, true);
+
+  // Normaler click (Maus-Fallback, verhindert Doppelauslösung)
+  var _lastRun = 0;
+  document.addEventListener('click', function(e) {
+    var now = Date.now();
+    if (now - _lastRun < 100) return; // Debounce gegen pointerup+click
+    _lastRun = now;
+    runHandler(e.target, 'data-onclick');
+  }, false);
+
+  // Input
+  document.addEventListener('input', function(e) {
+    var h = e.target.getAttribute('data-oninput');
+    if (h) try { (new Function(h)).call(e.target); } catch(err) { console.error('oninput:', err); }
+  }, false);
+
+  // Change
+  document.addEventListener('change', function(e) {
+    var h = e.target.getAttribute('data-onchange');
+    if (h) try { (new Function(h)).call(e.target); } catch(err) { console.error('onchange:', err); }
+  }, false);
+});
+</script>
+
 <script>
 
 // ── Einheitliche Fallback-Schriftliste (überschrieben durch Tauri-Polyfill) ──
@@ -473,43 +531,59 @@ window._pdfjsReady = (function(){
 </script>
 </head>
 <body>
+<script>
+// Windows WebView2 onclick-Polyfill
+document.addEventListener('click', function(e){
+  var el = e.target;
+  var depth = 0;
+  while(el && el !== document.body && depth++ < 8){
+    var handler = el.getAttribute('data-onclick');
+    if(handler){
+      try{ (new Function(handler)).call(el); }
+      catch(err){ console.error('data-onclick err:', err.message, handler.slice(0,60)); }
+      break;
+    }
+    el = el.parentElement;
+  }
+}, false);
+</script>
 
 <!-- BOARD MANAGER PANEL -->
 <div id="board-panel">
   <div id="bp-header">
     <span id="bp-title">📋 Meine Boards</span>
-    <button id="bp-close" onclick="toggleBoardPanel()">✕</button>
+    <button id="bp-close" data-data-onclick="toggleBoardPanel()">✕</button>
   </div>
   <div id="bp-list"></div>
   <div id="bp-footer">
-    <button class="bp-btn primary" onclick="newBoard()">+ Neues Board</button>
-    <button class="bp-btn" onclick="showBoardSizeInfo()">⬇ Dieses Board (.json)</button>
-    <button class="bp-btn" onclick="exportAllBoards()">⬇ Alle Boards (.json)</button>
-    <button class="bp-btn" onclick="document.getElementById('import-input').click()">⬆ Board(s) importieren</button>
-    <input type="file" id="import-input" accept=".json" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" multiple onchange="importBoard(event)">
+    <button class="bp-btn primary" data-data-onclick="newBoard()">+ Neues Board</button>
+    <button class="bp-btn" data-data-onclick="showBoardSizeInfo()">⬇ Dieses Board (.json)</button>
+    <button class="bp-btn" data-data-onclick="exportAllBoards()">⬇ Alle Boards (.json)</button>
+    <button class="bp-btn" data-data-onclick="document.getElementById('import-input').click()">⬆ Board(s) importieren</button>
+    <input type="file" id="import-input" accept=".json" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" multiple data-onchange="importBoard(event)">
   </div>
 </div>
 
 <!-- AUTOSAVE INDICATOR -->
 <div id="save-indicator">✓ Gespeichert</div>
-<div id="multi-select-bar" style="display:none;position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:8px 14px;font-size:12px;font-family:var(--mono);z-index:1200;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.5);"><span id="multi-select-count" style="color:var(--accent);font-weight:700"></span><button onclick="deleteMultiSelected()" style="background:var(--surface2);border:1px solid #e74c3c;color:#e74c3c;border-radius:6px;padding:3px 10px;cursor:pointer;font-family:var(--mono);font-size:11px;">🗑 Löschen</button><button onclick="clearSelection();updateMultiBar()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:var(--mono);font-size:11px;">✕ Aufheben</button></div>
+<div id="multi-select-bar" style="display:none;position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:8px 14px;font-size:12px;font-family:var(--mono);z-index:1200;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.5);"><span id="multi-select-count" style="color:var(--accent);font-weight:700"></span><button data-data-onclick="deleteMultiSelected()" style="background:var(--surface2);border:1px solid #e74c3c;color:#e74c3c;border-radius:6px;padding:3px 10px;cursor:pointer;font-family:var(--mono);font-size:11px;">🗑 Löschen</button><button data-data-onclick="clearSelection();updateMultiBar()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:var(--mono);font-size:11px;">✕ Aufheben</button></div>
 
 <!-- FIXED BACKGROUND — lives outside canvas, never moves -->
 <div id="bg-fixed"></div>
 
 <!-- HEADER -->
 <div id="header">
-  <button class="hdr-btn" id="boards-btn" onclick="toggleBoardPanel()" style="font-weight:600;padding:5px 10px;gap:5px;display:flex;align-items:center;">⊞ <span id="boards-btn-label">Boards</span></button>
+  <button class="hdr-btn" id="boards-btn" data-data-onclick="toggleBoardPanel()" style="font-weight:600;padding:5px 10px;gap:5px;display:flex;align-items:center;">⊞ <span id="boards-btn-label">Boards</span></button>
   <div style="width:1px;height:22px;background:var(--border);flex-shrink:0"></div>
-  <div id="board-name-display" onclick="startBoardRename()" title="Klicken zum Bearbeiten">Mein Board</div>
+  <div id="board-name-display" data-data-onclick="startBoardRename()" title="Klicken zum Bearbeiten">Mein Board</div>
   <input id="board-name-input" onblur="commitBoardRename()" onkeydown="if(event.key==='Enter')commitBoardRename();event.stopPropagation();">
   <div class="hdr-space"></div>
-  <button class="hdr-btn upload-only" onclick="document.getElementById('bg-upload-input').click();return false;" title="Hintergrundbild hochladen">🖼 Hintergrund</button>
-  <button class="hdr-btn upload-only" onclick="openBgSettingsModal()" title="Hintergrundeinstellungen" style="padding:4px 6px;font-size:11px">⚙</button>
-  <button class="hdr-btn" id="install-btn" style="display:none" onclick="installPWA()" title="Als App installieren">⬇ Installieren</button>
-  <button class="hdr-btn bg-swatch" onclick="document.getElementById('bg-color-input').click()" title="Hintergrundfarbe ändern"><span class="swatch" id="bg-swatch-preview" style="background:#0e0f11"></span>Hintergrund</button>
-  <button class="hdr-btn" id="layer-btn" onclick="toggleLayerPanel()" title="Ebenen">⧉ Ebenen</button>
-  <button class="hdr-btn" id="present-btn" onclick="togglePresentation()">⛶ Präsentation</button>
+  <button class="hdr-btn upload-only" data-data-onclick="document.getElementById('bg-upload-input').click();return false;" title="Hintergrundbild hochladen">🖼 Hintergrund</button>
+  <button class="hdr-btn upload-only" data-data-onclick="openBgSettingsModal()" title="Hintergrundeinstellungen" style="padding:4px 6px;font-size:11px">⚙</button>
+  <button class="hdr-btn" id="install-btn" style="display:none" data-data-onclick="installPWA()" title="Als App installieren">⬇ Installieren</button>
+  <button class="hdr-btn bg-swatch" data-data-onclick="document.getElementById('bg-color-input').click()" title="Hintergrundfarbe ändern"><span class="swatch" id="bg-swatch-preview" style="background:#0e0f11"></span>Hintergrund</button>
+  <button class="hdr-btn" id="layer-btn" data-data-onclick="toggleLayerPanel()" title="Ebenen">⧉ Ebenen</button>
+  <button class="hdr-btn" id="present-btn" data-data-onclick="togglePresentation()">⛶ Präsentation</button>
   <div id="zoom-display">100%</div>
 </div>
 
@@ -527,73 +601,73 @@ window._pdfjsReady = (function(){
 
 <!-- TOOLBAR -->
 <div id="toolbar">
-  <button class="tool-btn active" id="tool-select" onclick="setTool('select')">↖<span class="tool-tip">Auswählen (V)</span></button>
-  <button class="tool-btn" id="tool-pan" onclick="setTool('pan')">✋<span class="tool-tip">Bewegen (H)</span></button>
+  <button class="tool-btn active" id="tool-select" data-data-onclick="setTool('select')">↖<span class="tool-tip">Auswählen (V)</span></button>
+  <button class="tool-btn" id="tool-pan" data-data-onclick="setTool('pan')">✋<span class="tool-tip">Bewegen (H)</span></button>
   <div class="tool-sep"></div>
-  <button class="tool-btn" id="tool-pen" onclick="setTool('pen')">✏️<span class="tool-tip">Freihand (P)</span></button>
-  <button class="tool-btn" id="tool-line" onclick="setTool('line')">╱<span class="tool-tip">Linie (L)</span></button>
-  <button class="tool-btn" id="tool-arrow" onclick="setTool('arrow')">↗<span class="tool-tip">Pfeil (A)</span></button>
-  <button class="tool-btn" id="tool-rect" onclick="setTool('rect')">▭<span class="tool-tip">Rechteck (R)</span></button>
-  <button class="tool-btn" id="tool-circle" onclick="setTool('circle')">◯<span class="tool-tip">Ellipse (E)</span></button>
-  <button class="tool-btn" id="tool-text" onclick="setTool('text')">T<span class="tool-tip">Text (T)</span></button>
-  <button class="tool-btn" id="tool-text-opts" onclick="toggleTextPicker(event)" title="Textoptionen" style="font-size:9px;padding:2px 4px;">Aa▾</button>
-  <button class="tool-btn" id="tool-eraser" onclick="setTool('eraser')">⌫<span class="tool-tip">Radierer (X)</span></button>
-  <button class="tool-btn" id="stroke-settings-btn" onclick="toggleStrokePicker(event)">🎨<span class="tool-tip">Stift-Optionen</span></button>
+  <button class="tool-btn" id="tool-pen" data-data-onclick="setTool('pen')">✏️<span class="tool-tip">Freihand (P)</span></button>
+  <button class="tool-btn" id="tool-line" data-data-onclick="setTool('line')">╱<span class="tool-tip">Linie (L)</span></button>
+  <button class="tool-btn" id="tool-arrow" data-data-onclick="setTool('arrow')">↗<span class="tool-tip">Pfeil (A)</span></button>
+  <button class="tool-btn" id="tool-rect" data-data-onclick="setTool('rect')">▭<span class="tool-tip">Rechteck (R)</span></button>
+  <button class="tool-btn" id="tool-circle" data-data-onclick="setTool('circle')">◯<span class="tool-tip">Ellipse (E)</span></button>
+  <button class="tool-btn" id="tool-text" data-data-onclick="setTool('text')">T<span class="tool-tip">Text (T)</span></button>
+  <button class="tool-btn" id="tool-text-opts" data-data-onclick="toggleTextPicker(event)" title="Textoptionen" style="font-size:9px;padding:2px 4px;">Aa▾</button>
+  <button class="tool-btn" id="tool-eraser" data-data-onclick="setTool('eraser')">⌫<span class="tool-tip">Radierer (X)</span></button>
+  <button class="tool-btn" id="stroke-settings-btn" data-data-onclick="toggleStrokePicker(event)">🎨<span class="tool-tip">Stift-Optionen</span></button>
   <div class="tool-sep"></div>
-  <button class="tool-btn" onclick="addNote()">📝<span class="tool-tip">Notiz (N)</span></button>
-  <button class="tool-btn" onclick="openFolderModal()">📁<span class="tool-tip">Ordner (F)</span></button>
-  <button class="tool-btn upload-only" onclick="document.getElementById('file-upload').click()">📄<span class="tool-tip">Datei hochladen</span></button>
-  <button class="tool-btn upload-only" onclick="document.getElementById('img-upload').click()">🖼<span class="tool-tip">Bild ablegen</span></button>
+  <button class="tool-btn" data-data-onclick="addNote()">📝<span class="tool-tip">Notiz (N)</span></button>
+  <button class="tool-btn" data-data-onclick="openFolderModal()">📁<span class="tool-tip">Ordner (F)</span></button>
+  <button class="tool-btn upload-only" data-data-onclick="document.getElementById('file-upload').click()">📄<span class="tool-tip">Datei hochladen</span></button>
+  <button class="tool-btn upload-only" data-data-onclick="document.getElementById('img-upload').click()">🖼<span class="tool-tip">Bild ablegen</span></button>
   <div class="tool-sep"></div>
-  <button class="tool-btn" id="tool-grid" onclick="toggleGrid()">⠿<span class="tool-tip">Raster (G)</span></button>
-  <button class="tool-btn" onclick="clearSelected()">🗑<span class="tool-tip">Löschen (Del)</span></button>
+  <button class="tool-btn" id="tool-grid" data-data-onclick="toggleGrid()">⠿<span class="tool-tip">Raster (G)</span></button>
+  <button class="tool-btn" data-data-onclick="clearSelected()">🗑<span class="tool-tip">Löschen (Del)</span></button>
 </div>
 
 <!-- STROKE PICKER -->
 <!-- TEXT PICKER -->
 <div id="text-picker">
   <div class="sp-row"><span class="sp-lbl">Schriftart</span>
-    <select id="tp-font-select" onchange="setTextFont(this.value)" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;font-family:var(--mono);padding:3px 6px;border-radius:5px;cursor:pointer;"></select>
+    <select id="tp-font-select" data-onchange="setTextFont(this.value)" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;font-family:var(--mono);padding:3px 6px;border-radius:5px;cursor:pointer;"></select>
   </div>
   <div class="sp-row"><span class="sp-lbl">Größe</span>
-    <input type="range" id="tp-size-range" min="8" max="200" value="18" oninput="setTextSize(+this.value)">
-    <input type="number" id="tp-size-num" min="8" max="500" value="18" oninput="setTextSize(+this.value)" style="width:52px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;font-family:var(--mono);padding:2px 5px;border-radius:4px;text-align:right;">
+    <input type="range" id="tp-size-range" min="8" max="200" value="18" data-oninput="setTextSize(+this.value)">
+    <input type="number" id="tp-size-num" min="8" max="500" value="18" data-oninput="setTextSize(+this.value)" style="width:52px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;font-family:var(--mono);padding:2px 5px;border-radius:4px;text-align:right;">
   </div>
   <div class="sp-row"><span class="sp-lbl">Farbe</span>
     <div class="sp-colors" id="tp-colors"></div>
-    <input type="color" id="tp-custom" value="#00e5c3" style="width:20px;height:20px;border:none;border-radius:50%;cursor:pointer;padding:0;background:none;margin-left:3px;" oninput="setTextColor(this.value)" onchange="setTextColor(this.value)">
+    <input type="color" id="tp-custom" value="#00e5c3" style="width:20px;height:20px;border:none;border-radius:50%;cursor:pointer;padding:0;background:none;margin-left:3px;" data-oninput="setTextColor(this.value)" data-onchange="setTextColor(this.value)">
   </div>
   <div class="sp-row"><span class="sp-lbl">Stil</span>
-    <button class="sp-mb" id="tp-bold" onclick="toggleTextStyle('bold')" style="font-weight:bold">B</button>
-    <button class="sp-mb" id="tp-italic" onclick="toggleTextStyle('italic')" style="font-style:italic">I</button>
+    <button class="sp-mb" id="tp-bold" data-data-onclick="toggleTextStyle('bold')" style="font-weight:bold">B</button>
+    <button class="sp-mb" id="tp-italic" data-data-onclick="toggleTextStyle('italic')" style="font-style:italic">I</button>
   </div>
 </div>
 
 <div id="stroke-picker">
   <div class="sp-row"><span class="sp-lbl">Farbe</span><div class="sp-colors" id="sp-colors"></div><input type="color" id="sp-custom" value="#00e5c3" style="width:20px;height:20px;border:none;border-radius:50%;cursor:pointer;padding:0;background:none;margin-left:3px;"></div>
-  <div class="sp-row"><span class="sp-lbl">Stärke</span><input type="range" id="stroke-size" min="1" max="300" value="3" oninput="S.strokeSize=+this.value;document.getElementById('sp-sn').value=this.value;applyStrokeToSelected()"><input type="number" id="sp-sn" min="1" max="1000" value="3" style="width:44px;font-size:10px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:2px 4px;text-align:center;" oninput="const v=Math.max(1,Math.min(1000,+this.value||1));S.strokeSize=v;const r=document.getElementById('stroke-size');if(r)r.value=Math.min(300,v);applyStrokeToSelected();" onkeydown="event.stopPropagation()"><span style="font-size:10px;font-family:var(--mono);color:var(--text-dim)">px</span></div>
+  <div class="sp-row"><span class="sp-lbl">Stärke</span><input type="range" id="stroke-size" min="1" max="300" value="3" data-oninput="S.strokeSize=+this.value;document.getElementById('sp-sn').value=this.value;applyStrokeToSelected()"><input type="number" id="sp-sn" min="1" max="1000" value="3" style="width:44px;font-size:10px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:2px 4px;text-align:center;" data-oninput="const v=Math.max(1,Math.min(1000,+this.value||1));S.strokeSize=v;const r=document.getElementById('stroke-size');if(r)r.value=Math.min(300,v);applyStrokeToSelected();" onkeydown="event.stopPropagation()"><span style="font-size:10px;font-family:var(--mono);color:var(--text-dim)">px</span></div>
   <div class="sp-row"><span class="sp-lbl">Stil</span>
-    <button class="sp-mb active" id="dash-solid" onclick="setDash('')">—</button>
-    <button class="sp-mb" id="dash-dashed" onclick="setDash('dash')">╌</button>
-    <button class="sp-mb" id="dash-dotted" onclick="setDash('dot')">·····</button>
-    <label style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);color:var(--text-dim);margin-left:8px;cursor:pointer;"><input type="checkbox" id="stroke-fill" onchange="setStrokeFill(this.checked)" style="accent-color:var(--accent)"> Füllung</label>
+    <button class="sp-mb active" id="dash-solid" data-data-onclick="setDash('')">—</button>
+    <button class="sp-mb" id="dash-dashed" data-data-onclick="setDash('dash')">╌</button>
+    <button class="sp-mb" id="dash-dotted" data-data-onclick="setDash('dot')">·····</button>
+    <label style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);color:var(--text-dim);margin-left:8px;cursor:pointer;"><input type="checkbox" id="stroke-fill" data-onchange="setStrokeFill(this.checked)" style="accent-color:var(--accent)"> Füllung</label>
   </div>
-  <div class="sp-row"><span class="sp-lbl">Deckkraft</span><input type="range" id="stroke-opacity" min="10" max="100" value="100" oninput="S.strokeOpacity=+this.value/100;document.getElementById('sp-ov').textContent=this.value+'%';applyStrokeToSelected()"><span id="sp-ov" style="font-size:10px;font-family:var(--mono);color:var(--text-dim);min-width:32px">100%</span></div>
+  <div class="sp-row"><span class="sp-lbl">Deckkraft</span><input type="range" id="stroke-opacity" min="10" max="100" value="100" data-oninput="S.strokeOpacity=+this.value/100;document.getElementById('sp-ov').textContent=this.value+'%';applyStrokeToSelected()"><span id="sp-ov" style="font-size:10px;font-family:var(--mono);color:var(--text-dim);min-width:32px">100%</span></div>
 </div>
 
 <!-- SIDE PANEL -->
 <div id="side-panel">
-  <button class="side-btn" onclick="resetView()" title="Ansicht zurücksetzen">⊙</button>
-  <button class="side-btn" onclick="fitAll()" title="Alles anzeigen">⊡</button>
+  <button class="side-btn" data-data-onclick="resetView()" title="Ansicht zurücksetzen">⊙</button>
+  <button class="side-btn" data-data-onclick="fitAll()" title="Alles anzeigen">⊡</button>
   <div class="side-sep"></div>
-  <button class="side-btn" onclick="undoStroke()" title="Rückgängig (Strg+Z)">↩</button>
-  <button class="side-btn" onclick="clearDrawings()" title="Zeichnungen löschen">🗑</button>
+  <button class="side-btn" data-data-onclick="undoStroke()" title="Rückgängig (Strg+Z)">↩</button>
+  <button class="side-btn" data-data-onclick="clearDrawings()" title="Zeichnungen löschen">🗑</button>
 </div>
 
 <!-- ZOOM -->
 <div id="mini-ctrl">
-  <button class="mini-btn" onclick="zoomBy(1.2)">+</button>
-  <button class="mini-btn" onclick="zoomBy(0.8)">−</button>
+  <button class="mini-btn" data-data-onclick="zoomBy(1.2)">+</button>
+  <button class="mini-btn" data-data-onclick="zoomBy(0.8)">−</button>
 </div>
 
 <!-- CONTEXT MENU -->
@@ -611,33 +685,33 @@ window._pdfjsReady = (function(){
 <!-- FILE VIEWER -->
 <div id="viewer-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.85);flex-direction:column;align-items:center;justify-content:center;">
   <div id="viewer-header" style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:10px 16px;background:rgba(0,0,0,.5);">
-    <button id="viewer-prev" onclick="openViewerMulti._cur--" style="background:none;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px;margin-right:10px;">‹</button>
+    <button id="viewer-prev" data-data-onclick="openViewerMulti._cur--" style="background:none;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px;margin-right:10px;">‹</button>
     <span id="viewer-title" style="flex:1;text-align:center;font-size:13px;font-family:var(--mono);color:var(--text);">—</span>
-    <button id="viewer-next" onclick="openViewerMulti._cur++" style="background:none;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px;margin-left:10px;">›</button>
-    <button id="viewer-close" onclick="closeViewer()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:22px;padding:0 6px;margin-left:12px;">✕</button>
+    <button id="viewer-next" data-data-onclick="openViewerMulti._cur++" style="background:none;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px;margin-left:10px;">›</button>
+    <button id="viewer-close" data-data-onclick="closeViewer()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:22px;padding:0 6px;margin-left:12px;">✕</button>
   </div>
   <div id="viewer-body" style="margin-top:50px;padding:20px;max-width:90vw;max-height:80vh;overflow:auto;display:flex;align-items:center;justify-content:center;position:relative;"><div id="viewer-resize-handle" style="position:fixed;right:8px;bottom:8px;width:32px;height:32px;cursor:se-resize;background:var(--accent);border-radius:8px;opacity:0.7;z-index:9100;display:flex;align-items:center;justify-content:center;font-size:16px;color:#000;user-select:none;" title="Größe ändern">⇲</div></div>
 </div>
 
 <!-- PRESENTATION HINT -->
-<div id="pres-hint" onclick="togglePresentation()" title="Klicken oder ESC zum Beenden">ESC</div>
+<div id="pres-hint" data-data-onclick="togglePresentation()" title="Klicken oder ESC zum Beenden">ESC</div>
 
 <!-- LAYER PANEL -->
 <div id="layer-panel">
   <div id="layer-panel-header">
     <span id="layer-panel-title">⧉ Ebenen</span>
-    <button class="layer-icon-btn" onclick="toggleLayerPanel()" title="Schließen">✕</button>
+    <button class="layer-icon-btn" data-data-onclick="toggleLayerPanel()" title="Schließen">✕</button>
   </div>
   <div id="layer-list"></div>
-  <button class="layer-add-btn" onclick="addLayer()">+ Neue Ebene</button>
+  <button class="layer-add-btn" data-data-onclick="addLayer()">+ Neue Ebene</button>
 </div>
 
 <!-- INPUTS -->
-<input type="file" id="file-upload" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.mp4,.mov,.webm,.m4v,.mpeg" onchange="handleFileUpload(event)">
-<input type="color" id="bg-color-input" value="#0e0f11" oninput="setBgColor(this.value)">
-<input type="file" id="folder-file-input" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" multiple onchange="_onFolderFileSelected()">
-<input type="file" id="img-upload" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" accept="image/*" multiple onchange="handleImageUpload(event)">
-<input type="file" id="bg-upload-input" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" accept="image/*" onchange="handleBgUpload(event)">
+<input type="file" id="file-upload" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.mp4,.mov,.webm,.m4v,.mpeg" data-onchange="handleFileUpload(event)">
+<input type="color" id="bg-color-input" value="#0e0f11" data-oninput="setBgColor(this.value)">
+<input type="file" id="folder-file-input" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" multiple data-onchange="_onFolderFileSelected()">
+<input type="file" id="img-upload" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" accept="image/*" multiple data-onchange="handleImageUpload(event)">
+<input type="file" id="bg-upload-input" style="position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;" accept="image/*" data-onchange="handleBgUpload(event)">
 
 <script>
 'use strict';
@@ -938,6 +1012,8 @@ strokeAttrs = function(){
 let isPanning=false,panStart=null;
 // ── Unified Pointer/Touch/Stylus + Mouse handler ──
 function _onCanvasPointerDown(e){
+  // UI-Elemente nicht unterbrechen — buttons, toolbar, panels bekommen Events zuerst
+  if(e.target.closest('#header,#toolbar,#side-panel,#mini-ctrl,#layer-panel,#board-panel,#ctx-menu,#modal-overlay,#viewer-overlay,.note-opt-panel,.folder-window,.hdr-btn,.tool-btn,.side-btn,.mini-btn')) return;
   const ne = normEvent(e);
   // Track pointer for multi-touch (only touch/pen, not mouse)
   if(ne.pointerType!=='mouse') _pointers.set(ne.pointerId, {x:ne.clientX, y:ne.clientY, type:ne.pointerType});
@@ -1100,6 +1176,7 @@ window.addEventListener('pointercancel', e=>{
 // Keep mouse events as fallback for browsers without pointer event support
 if(!window.PointerEvent){
   canvasWrap.addEventListener('mousedown',e=>{
+    if(e.target.closest('#header,#toolbar,#side-panel,#mini-ctrl')) return;
     closeDropdown();
     if(document.activeElement&&(document.activeElement.tagName==='TEXTAREA'||document.activeElement.tagName==='INPUT'))
       document.activeElement.blur();
@@ -1912,7 +1989,7 @@ function renderFile(item){
 
     // Footer
     const meta=document.createElement('div');meta.className='file-meta';
-    meta.innerHTML=`<span style="font-size:12px;color:#9b59b6">🎬</span><span class="file-label" style="flex:1;text-align:left">${escHtml(item.name||'')}</span><button onclick="openViewer(${item.id})" style="border:none;background:transparent;color:var(--accent);cursor:pointer;font-size:10px;font-family:var(--mono)">⛶ Vollbild</button>`;
+    meta.innerHTML=`<span style="font-size:12px;color:#9b59b6">🎬</span><span class="file-label" style="flex:1;text-align:left">${escHtml(item.name||'')}</span><button data-data-onclick="openViewer(${item.id})" style="border:none;background:transparent;color:var(--accent);cursor:pointer;font-size:10px;font-family:var(--mono)">⛶ Vollbild</button>`;
     el.appendChild(meta);
 
     // Resize-Handle
@@ -1984,7 +2061,7 @@ function renderFile(item){
     el.appendChild(wrap);
     // footer bar
     const meta=document.createElement('div');meta.className='file-meta';
-    meta.innerHTML=`<span style="font-size:12px;color:${color}">${icon}</span><span class="file-label" style="flex:1;text-align:left">${escHtml(item.name||'')}</span><button onclick="openViewer(${item.id})" style="border:none;background:transparent;color:var(--accent);cursor:pointer;font-size:10px;font-family:var(--mono)">⛶ Vollbild</button>`;
+    meta.innerHTML=`<span style="font-size:12px;color:${color}">${icon}</span><span class="file-label" style="flex:1;text-align:left">${escHtml(item.name||'')}</span><button data-data-onclick="openViewer(${item.id})" style="border:none;background:transparent;color:var(--accent);cursor:pointer;font-size:10px;font-family:var(--mono)">⛶ Vollbild</button>`;
     el.appendChild(meta);
     const rh=document.createElement('div');rh.style.cssText='position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:se-resize;z-index:2;';el.appendChild(rh);
     makeResizable(el,item,rh);
@@ -1996,7 +2073,7 @@ function renderFile(item){
     el.style.width=(item.w||200)+'px';el.style.height=(item.h||120)+'px';
     const wrap=document.createElement('div');wrap.className='file-preview-wrap';
     wrap.style.cssText=`width:100%;height:${(item.h||120)-36}px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;`;
-    wrap.innerHTML=`<span style="font-size:38px">${icon}</span><button onclick="openViewer(${item.id})" style="border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;font-family:var(--mono)">Öffnen</button>`;
+    wrap.innerHTML=`<span style="font-size:38px">${icon}</span><button data-data-onclick="openViewer(${item.id})" style="border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;font-family:var(--mono)">Öffnen</button>`;
     el.appendChild(wrap);
     const meta=document.createElement('div');meta.className='file-meta';
     meta.innerHTML=`<span style="font-size:12px;color:${color}">${icon}</span><span class="file-label" style="flex:1;text-align:left">${escHtml(item.name||'')}</span>`;
@@ -3313,12 +3390,12 @@ function showCanvasCtxMenu(e){
   const p=cpt(e);
   ctxMenu.style.display='block';ctxMenu.style.left=e.clientX+'px';ctxMenu.style.top=e.clientY+'px';
   ctxMenu.innerHTML=`
-    <div class="ctx-item" onclick="addNoteAt(${p.x},${p.y})"><span class="ctx-icon">📝</span>Notiz hier</div>
-    <div class="ctx-item" onclick="openFolderModalAt(${p.x},${p.y})"><span class="ctx-icon">📁</span>Ordner hier</div>
-    <div class="ctx-item" onclick="document.getElementById('file-upload').click()"><span class="ctx-icon">📄</span>Datei hochladen</div>
+    <div class="ctx-item" data-data-onclick="addNoteAt(${p.x},${p.y})"><span class="ctx-icon">📝</span>Notiz hier</div>
+    <div class="ctx-item" data-data-onclick="openFolderModalAt(${p.x},${p.y})"><span class="ctx-icon">📁</span>Ordner hier</div>
+    <div class="ctx-item" data-data-onclick="document.getElementById('file-upload').click()"><span class="ctx-icon">📄</span>Datei hochladen</div>
     <div class="ctx-sep"></div>
-    <div class="ctx-item" onclick="clearSelection()"><span class="ctx-icon">○</span>Auswahl aufheben</div>
-    ${S.selectedIds.size>0?`<div class="ctx-item danger" onclick="clearSelected()"><span class="ctx-icon">🗑</span>Auswahl löschen</div>`:''}`;
+    <div class="ctx-item" data-data-onclick="clearSelection()"><span class="ctx-icon">○</span>Auswahl aufheben</div>
+    ${S.selectedIds.size>0?`<div class="ctx-item danger" data-data-onclick="clearSelected()"><span class="ctx-icon">🗑</span>Auswahl löschen</div>`:''}`;
 }
 canvasWrap.addEventListener('contextmenu',e=>{if(isBg(e.target)){e.preventDefault();showCanvasCtxMenu(e);}});
 document.addEventListener('click',e=>{
@@ -3358,6 +3435,17 @@ function isTyping(){const t=document.activeElement?.tagName;return t==='INPUT'||
 document.addEventListener('keydown',e=>{
   ctxMenu.style.display='none';
   if(e.key==='Escape'){clearSelection();closeModal();closeViewer();if(S.presentation)togglePresentation();return;}
+  // F11 → Vollbild umschalten
+  if(e.key==='F11'){
+    e.preventDefault();
+    if(window.__TAURI__){
+      import('@tauri-apps/api/window').then(({getCurrentWindow})=>{
+        const w=getCurrentWindow();
+        w.isFullscreen().then(full=>w.setFullscreen(!full));
+      }).catch(()=>{});
+    }
+    return;
+  }
   if(isTyping()) return;
   if(e.key==='Delete'||e.key==='Backspace') clearSelected();
   if(!e.ctrlKey&&!e.metaKey){switch(e.key.toLowerCase()){case 'v':setTool('select');break;case 'h':setTool('pan');break;case 'p':setTool('pen');break;case 'l':setTool('line');break;case 'a':setTool('arrow');break;case 'r':setTool('rect');break;case 'e':setTool('circle');break;case 'x':setTool('eraser');break;case 't':setTool('text');break;case 'n':addNote();break;case 'f':openFolderModal();break;case 'g':toggleGrid();break;}}
@@ -3370,7 +3458,7 @@ document.addEventListener('keydown',e=>{
 // ═══════════════════════════════════════════════
 function renameItem(id){
   ctxMenu.style.display='none';const item=S.items.find(i=>i.id===id);if(!item)return;
-  openModal(`<div class="modal-title">Umbenennen</div><input class="modal-input" id="rename-inp" value="${escHtml(item.name||'')}"><div class="modal-btns"><button class="modal-btn cancel" onclick="closeModal()">Abbrechen</button><button class="modal-btn confirm" onclick="commitRename(${id})">Speichern</button></div>`);
+  openModal(`<div class="modal-title">Umbenennen</div><input class="modal-input" id="rename-inp" value="${escHtml(item.name||'')}"><div class="modal-btns"><button class="modal-btn cancel" data-data-onclick="closeModal()">Abbrechen</button><button class="modal-btn confirm" data-data-onclick="commitRename(${id})">Speichern</button></div>`);
   setTimeout(()=>{const i=$('rename-inp');if(i){ensureKeyboard(i);try{i.select();}catch(_){}i.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')commitRename(id);});}},80);
 }
 function commitRename(id){const item=S.items.find(i=>i.id===id);const val=$('rename-inp')?.value;if(item&&val){item.name=val;renderItem(item);}closeModal();}
@@ -3441,7 +3529,7 @@ function _onFolderFileSelected(){
   });
   inp.value='';
 }
-function showInfo(msg){openModal(`<div class="modal-title">ℹ️ Info</div><p style="font-size:12px;font-family:var(--mono);color:var(--text-dim);margin-bottom:14px">${escHtml(msg)}</p><div class="modal-btns"><button class="modal-btn confirm" onclick="closeModal()">OK</button></div>`);}
+function showInfo(msg){openModal(`<div class="modal-title">ℹ️ Info</div><p style="font-size:12px;font-family:var(--mono);color:var(--text-dim);margin-bottom:14px">${escHtml(msg)}</p><div class="modal-btns"><button class="modal-btn confirm" data-data-onclick="closeModal()">OK</button></div>`);}
 
 // ═══════════════════════════════════════════════
 //  ADD ITEMS
@@ -3455,7 +3543,7 @@ function addNoteAt(x,y){
 }
 function openFolderModal(){openFolderModalAt();}
 function openFolderModalAt(x,y){
-  openModal(`<div class="modal-title">📁 Neuer Ordner</div><input class="modal-input" id="fn-inp" placeholder="Ordnername…"><div class="modal-btns"><button class="modal-btn cancel" onclick="closeModal()">Abbrechen</button><button class="modal-btn confirm" onclick="commitFolder(${x??'undefined'},${y??'undefined'})">Erstellen</button></div>`);
+  openModal(`<div class="modal-title">📁 Neuer Ordner</div><input class="modal-input" id="fn-inp" placeholder="Ordnername…"><div class="modal-btns"><button class="modal-btn cancel" data-data-onclick="closeModal()">Abbrechen</button><button class="modal-btn confirm" data-data-onclick="commitFolder(${x??'undefined'},${y??'undefined'})">Erstellen</button></div>`);
   setTimeout(()=>{const i=$('fn-inp');if(i){ensureKeyboard(i);i.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')commitFolder(x,y);});}},80);
 }
 function commitFolder(x,y){const name=$('fn-inp')?.value||'Neuer Ordner';const pos=(x!==undefined&&!isNaN(+x))?{x:+x,y:+y}:centerPos();const item=createItem('folder',{name,x:pos.x-80,y:pos.y-40,w:200,children:[]});if(x===undefined)ensureVisible(item);closeModal();}
@@ -3568,9 +3656,9 @@ function openBgSettingsModal(){
       </div>
     </div>
     <div class="modal-btns">
-      ${S.bgImage?`<button class="modal-btn cancel" onclick="removeBg()">✕ Entfernen</button>`:''}
-      <button class="modal-btn cancel" onclick="closeModal()">Abbrechen</button>
-      <button class="modal-btn confirm" onclick="commitBgUrl()">Anwenden</button>
+      ${S.bgImage?`<button class="modal-btn cancel" data-data-onclick="removeBg()">✕ Entfernen</button>`:''}
+      <button class="modal-btn cancel" data-data-onclick="closeModal()">Abbrechen</button>
+      <button class="modal-btn confirm" data-data-onclick="commitBgUrl()">Anwenden</button>
     </div>`);
   $('bg-url-inp')?.focus();
   ['bg-url-inp','bg-op'].forEach(id=>$(id)?.addEventListener('keydown',e=>e.stopPropagation()));
@@ -4038,7 +4126,7 @@ function showMoveToLayerMenu(itemId,e){
   ctxMenu.style.display='block';
   ctxMenu.style.left=(e?.clientX||100)+'px';ctxMenu.style.top=(e?.clientY||100)+'px';
   ctxMenu.innerHTML='<div style="font-size:10px;font-family:var(--mono);color:var(--text-dimmer);padding:4px 12px 2px">Auf Ebene verschieben:</div>'+
-    S.layers.map(l=>`<div class="ctx-item${l.id===item.layerId?' ctx-item-active':''}" onclick="moveItemToLayer(${itemId},${l.id})">`+
+    S.layers.map(l=>`<div class="ctx-item${l.id===item.layerId?' ctx-item-active':''}" data-data-onclick="moveItemToLayer(${itemId},${l.id})">`+
       `<span class="ctx-icon">${l.id===item.layerId?'✓':'⧉'}</span>${l.name}</div>`).join('');
 }
 function editTextLabelById(id){const el=$('item-'+id);const item=S.items.find(i=>i.id===id);if(el&&item)editTextLabel(item,el);}
@@ -4507,9 +4595,9 @@ function renderBoardList(store){
         <div class="bp-meta">${itemCount} Elemente · ${saved}</div>
       </div>
       <div class="bp-actions">
-        <button class="bp-act" title="Umbenennen" onclick="renameBoardById('${b.id}')">✏️</button>
-        <button class="bp-act" title="Duplizieren" onclick="duplicateBoardById('${b.id}')">⧉</button>
-        <button class="bp-act del" title="Löschen" onclick="deleteBoardById('${b.id}')">🗑</button>
+        <button class="bp-act" title="Umbenennen" data-data-onclick="renameBoardById('${b.id}')">✏️</button>
+        <button class="bp-act" title="Duplizieren" data-data-onclick="duplicateBoardById('${b.id}')">⧉</button>
+        <button class="bp-act del" title="Löschen" data-data-onclick="deleteBoardById('${b.id}')">🗑</button>
       </div>`;
     if(!isActive) card.addEventListener('click',e=>{if(!e.target.closest('.bp-act'))switchBoard(b.id);});
     list.appendChild(card);
@@ -4544,8 +4632,8 @@ function newBoard(){
   openModal(`<div class="modal-title">📋 Neues Board</div>
     <input class="modal-input" id="nb-name" placeholder="Board-Name…" value="Neues Board">
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="closeModal()">Abbrechen</button>
-      <button class="modal-btn confirm" onclick="commitNewBoard()">Erstellen</button>
+      <button class="modal-btn cancel" data-data-onclick="closeModal()">Abbrechen</button>
+      <button class="modal-btn confirm" data-data-onclick="commitNewBoard()">Erstellen</button>
     </div>`);
   setTimeout(()=>{const i=$('nb-name');if(i){ensureKeyboard(i);try{i.select();}catch(_){}i.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')commitNewBoard();});}},80);
 }
@@ -4571,8 +4659,8 @@ function renameBoardById(id){
   openModal(`<div class="modal-title">Board umbenennen</div>
     <input class="modal-input" id="rb-name" value="${escHtml(b.name||'')}">
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="closeModal()">Abbrechen</button>
-      <button class="modal-btn confirm" onclick="commitRenameBoard('${id}')">Speichern</button>
+      <button class="modal-btn cancel" data-data-onclick="closeModal()">Abbrechen</button>
+      <button class="modal-btn confirm" data-data-onclick="commitRenameBoard('${id}')">Speichern</button>
     </div>`);
   setTimeout(()=>{const i=$('rb-name');i?.focus();i?.select();i?.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')commitRenameBoard(id);});},50);
 }
@@ -4608,8 +4696,8 @@ function deleteBoardById(id){
   openModal(`<div class="modal-title">Board löschen?</div>
     <p style="font-size:12px;font-family:var(--mono);color:var(--text-dim);margin-bottom:14px">„${escHtml(b?.name||'')}" wird dauerhaft gelöscht.</p>
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="closeModal()">Abbrechen</button>
-      <button class="modal-btn" style="background:#ff4444;color:#fff" onclick="confirmDeleteBoard('${id}')">Löschen</button>
+      <button class="modal-btn cancel" data-data-onclick="closeModal()">Abbrechen</button>
+      <button class="modal-btn" style="background:#ff4444;color:#fff" data-data-onclick="confirmDeleteBoard('${id}')">Löschen</button>
     </div>`);
 }
 function confirmDeleteBoard(id){
@@ -4700,7 +4788,7 @@ function showBoardSizeInfo(){
       ${totalBytes>20*1024*1024?'⚠ Board sehr groß — Neukompress empfohlen':'✓ Größe OK für Export'}
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <button class="modal-btn confirm" onclick="
+      <button class="modal-btn confirm" data-data-onclick="
         closeModal();
         const prog=document.createElement('div');
         prog.id='compress-prog';
@@ -4712,8 +4800,8 @@ function showBoardSizeInfo(){
           (total)=>{prog.remove();scheduleSave();showInfo('✓ '+total+' Bilder neu komprimiert');}
         );
       ">🗜 Bilder neu komprimieren (für Export)</button>
-      <button class="modal-btn confirm" onclick="closeModal();exportBoard();">⬇ Board herunterladen</button>
-      <button class="modal-btn cancel" onclick="closeModal()">Abbrechen</button>
+      <button class="modal-btn confirm" data-data-onclick="closeModal();exportBoard();">⬇ Board herunterladen</button>
+      <button class="modal-btn cancel" data-data-onclick="closeModal()">Abbrechen</button>
     </div>
   `);
 }
@@ -4724,35 +4812,49 @@ function exportBoard(){
   const boardCopy = JSON.parse(JSON.stringify(board));
   const safeName = (boardCopy.name||'board').replace(/[^a-zA-Z0-9_\-äöüÄÖÜ]/g,'_');
 
-  // Rehydrate any idb: refs (images/files stored in IndexedDB)
-  // Progress-Toast
+  // Progress-Dialog mit Balken
   const _toast=document.createElement('div');
-  _toast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);'
-    +'background:var(--surface);border:1px solid var(--accent);border-radius:10px;'
-    +'padding:10px 22px;font-size:12px;font-family:var(--mono);z-index:99999;'
-    +'display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.5);';
-  _toast.innerHTML='<span style="color:var(--accent)">⏳</span> Daten werden geladen…';
+  _toast.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'
+    +'background:var(--surface);border:1px solid var(--accent);border-radius:14px;'
+    +'padding:24px 32px;font-size:13px;font-family:var(--mono);z-index:99999;'
+    +'min-width:320px;box-shadow:0 8px 40px rgba(0,0,0,.7);text-align:center;';
+  _toast.innerHTML='\
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px">💾 Board speichern</div>\
+    <div id="_save_msg" style="color:var(--text-dim);margin-bottom:14px">Daten werden vorbereitet…</div>\
+    <div style="background:var(--surface2);border-radius:8px;overflow:hidden;height:8px;">\
+      <div id="_save_bar" style="height:100%;width:0%;background:var(--accent);border-radius:8px;transition:width .3s ease;"></div>\
+    </div>\
+    <div id="_save_pct" style="color:var(--text-dimmer);font-size:10px;margin-top:6px">0%</div>';
   document.body.appendChild(_toast);
+  function _setProgress(pct, msg){
+    const bar=document.getElementById('_save_bar');
+    const lbl=document.getElementById('_save_msg');
+    const pctEl=document.getElementById('_save_pct');
+    if(bar) bar.style.width=pct+'%';
+    if(lbl&&msg) lbl.textContent=msg;
+    if(pctEl) pctEl.textContent=Math.round(pct)+'%';
+  }
+  _setProgress(10,'Bilder und Dateien laden…');
 
   restoreBoardDataAsync(boardCopy).then(full=>{
-    _toast.innerHTML='<span style="color:var(--accent)">📦</span> Datei wird erstellt…';
+    _setProgress(60,'Datei wird erstellt…');
     const json = JSON.stringify(full, null, 2);
     const blob = new Blob([json], {type:'application/json'});
     const sizeMB = (blob.size/1024/1024).toFixed(1);
 
     const finish=(ok)=>{
-      _toast.innerHTML=(ok
-        ?'<span style="color:var(--accent)">✓</span> Gespeichert ('+sizeMB+' MB)'
-        :'<span style="color:var(--accent)">⬇</span> Download gestartet ('+sizeMB+' MB)');
-      setTimeout(()=>_toast.remove(),2500);
+      _setProgress(100, ok ? '✓ Gespeichert ('+sizeMB+' MB)' : '⬇ Download läuft ('+sizeMB+' MB)');
+      document.getElementById('_save_bar').style.background=ok?'#2ecc71':'var(--accent)';
+      setTimeout(()=>_toast.remove(),2000);
     };
 
     // File System Access API — speichert direkt lokal ohne Download-Dialog
     if(window.showSaveFilePicker){
+      _setProgress(75,'Speicherort wählen…');
       window.showSaveFilePicker({
         suggestedName: safeName+'.json',
         types:[{description:'BoardDesk Board',accept:{'application/json':['.json']}}]
-      }).then(fh=>fh.createWritable())
+      }).then(fh=>{ _setProgress(85,'Datei wird geschrieben…'); return fh.createWritable(); })
         .then(w=>w.write(blob).then(()=>w))
         .then(w=>w.close())
         .then(()=>finish(true))
@@ -4897,6 +4999,8 @@ setTimeout(cleanupIdbOrphans, 5000); // clean up unused file data
      Muss NACH dem BoardDesk-Hauptskript eingebunden werden.
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="boarddesk-tauri-bridge.js"></script>
+<script src="boarddesk-tauri-bridge.js">
+window.addEventListener('DOMContentLoaded',init);
+</script>
 </body>
 </html>
