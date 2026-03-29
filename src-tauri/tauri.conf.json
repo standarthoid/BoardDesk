@@ -15,9 +15,7 @@
         "transparent": false
       }
     ],
-    "security": {
-      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com; media-src 'self' data: blob: *; img-src 'self' data: blob: *; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; worker-src blob: 'self';"
-    }
+    "security": {}
   },
   "build": {
     "beforeBuildCommand": "",
