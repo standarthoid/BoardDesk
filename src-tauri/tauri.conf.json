@@ -20,7 +20,7 @@
     }
   },
   "build": {
-    "beforeBuildCommand": "mkdir -p dist && cp index.html dist/ && cp boarddesk-tauri-bridge.js dist/",
+    "beforeBuildCommand": "",
     "beforeDevCommand": "python3 -m http.server 1420 --directory /Users/miriamhanke/Downloads/BoardDesk",
     "devUrl": "http://localhost:1420",
     "frontendDist": "dist"
