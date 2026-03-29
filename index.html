@@ -25,8 +25,8 @@
   --text:#e8eaf0;--text-dim:#7a7f94;--text-dimmer:#454a5c;
   --radius:10px;--shadow:0 8px 32px rgba(0,0,0,.5);
   --header-h:46px;
-  --wco-top: env(titlebar-area-y, 0px);
-  --wco-h: env(titlebar-area-height, 0px);
+  --wco-top: 0px;
+  --wco-h: 0px;
   --mono:'Cascadia Code','JetBrains Mono','Fira Code',Consolas,'Courier New',monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Segoe UI Variable',Ubuntu,Cantarell,'Helvetica Neue',Arial,sans-serif;
 }
@@ -45,18 +45,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
 /* ── HEADER ── */
 #header{
-  position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:1000;
+  position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:10000;
   display:flex;align-items:center;padding:0 14px;gap:8px;
   background:rgba(14,15,17,.93);border-bottom:1px solid var(--border);
   backdrop-filter:blur(12px);transition:transform .3s;
-  /* Window Controls Overlay: extend header into title bar */
-  top: var(--wco-top);
-  height: calc(var(--header-h) + var(--wco-h));
-  padding-top: var(--wco-h);
-  -webkit-app-region: drag;
+  top: 0;
+  height: var(--header-h);
+  padding-top: 0;
+  /* -webkit-app-region: drag; — deaktiviert wegen Windows-Kompatibilität */
 }
 /* Buttons must NOT be draggable */
-#header button, #header input, #header select { -webkit-app-region: no-drag; }
+/* #header button, #header input, #header select { -webkit-app-region: no-drag; } */
 #header.hidden{transform:translateY(calc(-1 * var(--header-h)));}
 #board-name-display{
   font-size:13px;color:var(--text-dim);font-family:var(--mono);
@@ -81,7 +80,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
 /* ── CANVAS ── */
 #canvas-wrap{
-  position:fixed;inset:0;top:calc(var(--header-h) + var(--wco-h));overflow:hidden;cursor:default;
+  position:fixed;inset:0;top:var(--header-h);overflow:hidden;cursor:default;z-index:1;
   z-index:1;transition:top .3s;background:transparent;touch-action:none;
 }
 #canvas-wrap.presentation{top:0 !important;}
@@ -264,7 +263,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 /* ── STROKE PICKER ── */
 #text-picker{
   display:none;position:fixed;bottom:84px;left:50%;transform:translateX(-50%);
-  z-index:1300;background:var(--surface);border:1px solid var(--border);
+  z-index:10001;background:var(--surface);border:1px solid var(--border);
   border-radius:10px;padding:10px 14px;min-width:320px;
   box-shadow:0 8px 32px rgba(0,0,0,.5);flex-direction:column;gap:6px;
 }
@@ -286,14 +285,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .sp-mb:hover,.sp-mb.active{background:var(--surface2);color:var(--accent);border-color:var(--accent);}
 
 /* ── SIDE PANEL ── */
-#side-panel{position:fixed;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:3px;background:var(--surface);border:1px solid var(--border-hi);border-radius:13px;padding:5px;box-shadow:var(--shadow);z-index:1000;transition:opacity .3s;}
+#side-panel{position:fixed;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:3px;background:var(--surface);border:1px solid var(--border-hi);border-radius:13px;padding:5px;box-shadow:var(--shadow);z-index:10002;transition:opacity .3s;}
 #side-panel.hidden{opacity:0;pointer-events:none;}
 .side-btn{width:34px;height:34px;border-radius:7px;border:none;background:transparent;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
 .side-btn:hover{background:var(--surface2);color:var(--text);}
 .side-sep{height:1px;background:var(--border);margin:2px 0;}
 
 /* ── ZOOM ── */
-#mini-ctrl{position:fixed;right:12px;bottom:22px;display:flex;flex-direction:column;gap:3px;z-index:1000;transition:opacity .3s;}
+#mini-ctrl{position:fixed;right:12px;bottom:22px;display:flex;flex-direction:column;gap:3px;z-index:10003;transition:opacity .3s;}
 #mini-ctrl.hidden{opacity:0;pointer-events:none;}
 .mini-btn{width:30px;height:30px;border-radius:7px;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .mini-btn:hover{border-color:var(--accent);color:var(--accent);}

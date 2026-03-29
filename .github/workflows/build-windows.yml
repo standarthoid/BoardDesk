@@ -11,17 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Dist-Ordner erstellen
-        run: |
-          mkdir -p dist
-          cp index.html dist/
-          cp boarddesk-tauri-bridge.js dist/
-
       - name: Rust installieren
         uses: dtolnay/rust-toolchain@stable
 
       - name: Tauri CLI installieren
         run: cargo install tauri-cli
+
+      - name: Dist-Ordner erstellen
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item index.html dist/
+          Copy-Item boarddesk-tauri-bridge.js dist/
+        shell: pwsh
 
       - name: Windows Build
         run: cargo tauri build
