@@ -103,10 +103,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
 /* ── ITEM BASE ── */
 .item{position:absolute;cursor:grab;transition:box-shadow .15s,outline .1s;border-radius:var(--radius);touch-action:none;}
-.item:hover{z-index:100!important;}
+/* z-index wird ausschließlich durch bringToFront() / applyLayerOrder() gesetzt — kein hover-Override */
 .image-item.item:hover{outline:none;}
-.item.selected{outline:2px solid var(--accent);outline-offset:2px;z-index:200!important;}
-.item.dragging{cursor:grabbing;opacity:.92;z-index:999!important;}
+.item.selected{outline:2px solid var(--accent);outline-offset:2px;}
+.item.dragging{cursor:grabbing;opacity:.92;}
 
 /* ── FILE ITEM ── */
 .file-item{
@@ -236,7 +236,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .note-textarea{width:100%;flex:1;background:transparent;border:none;outline:none;font-family:var(--mono);font-size:13px;line-height:1.6;resize:none;cursor:text;padding:6px 10px 14px;box-sizing:border-box;border-radius:0 0 8px 8px;}
 
 /* ── IMAGE ITEM ── */
-.image-item{border:none;box-shadow:0 2px 12px rgba(0,0,0,.3);overflow:hidden;min-width:40px;min-height:30px;background:transparent;will-change:transform;touch-action:none;cursor:grab;position:relative;}
+.image-item{border:none;box-shadow:0 2px 12px rgba(0,0,0,.3);overflow:hidden;min-width:40px;min-height:30px;background:transparent;touch-action:none;cursor:grab;position:relative;}
 .image-item img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}
 .img-rh{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:se-resize;background:var(--surface);border-top:1px solid var(--border);border-left:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--text-dimmer);opacity:0;transition:opacity .15s;}
 .image-item:hover .img-rh{opacity:1;}
@@ -892,7 +892,19 @@ function _updatePinch(){
       const asp=_pinchItem.aspect||(_pinchItemStartH&&_pinchItemStartW?_pinchItemStartH/_pinchItemStartW:1);
       _pinchItem.w=newW;
       if(_pinchItem.type!=='text-label') _pinchItem.h=Math.round(newW*asp);
-      if(el){el.style.width=newW+'px';if(_pinchItem.h) el.style.height=_pinchItem.h+'px';}
+      if(el){
+        el.style.width=newW+'px';
+        if(_pinchItem.h) el.style.height=_pinchItem.h+'px';
+        // Titelleiste proportional skalieren
+        const sc=Math.max(0.6,Math.min(3,newW/Math.max(1,_pinchItemStartW)));
+        const hdr=el.querySelector('.note-topbar,.file-meta,.folder-win-header');
+        if(hdr){
+          hdr.style.fontSize=Math.max(8,Math.round(11*sc))+'px';
+          hdr.style.minHeight=Math.max(20,Math.round(28*sc))+'px';
+        }
+        const lbl=el.querySelector('.file-label,.note-topbar span,.folder-label');
+        if(lbl) lbl.style.fontSize=Math.max(7,Math.round(10*sc))+'px';
+      }
     }
     if(!_rafPan) _rafPan=requestAnimationFrame(()=>{_rafPan=null;scheduleSave();});
   } else {
@@ -1338,8 +1350,9 @@ function clearSelection(){
   document.querySelectorAll('.item.selected').forEach(e=>e.classList.remove('selected'));
   const bar=document.getElementById('multi-select-bar');
   if(bar) bar.style.display='none';
+  applyLayerOrder();
 }
-function state_selectedAdd(id,el){S.selectedIds.add(id);if(el)el.classList.add('selected');updateMultiBar();}
+function state_selectedAdd(id,el){S.selectedIds.add(id);if(el)el.classList.add('selected');updateMultiBar();applyLayerOrder();}
 
 // ═══════════════════════════════════════════════
 //  DRAWING ENGINE
@@ -1860,7 +1873,11 @@ function renderItem(item){
   // Apply layer visibility and z-order
   const itemLayer=S.layers.find(l=>l.id===item.layerId);
   if(itemLayer && !itemLayer.visible) el.style.display='none';
-  if(itemLayer && itemLayer.locked){ el.style.pointerEvents='none'; }
+  if(itemLayer && itemLayer.locked){
+    el.style.pointerEvents='none';
+    // Zusätzlich: alle interaktiven Kinder deaktivieren
+    el.querySelectorAll('button,a,textarea,input,select,video').forEach(c=>{c.style.pointerEvents='none';});
+  }
   const layerIdx=S.layers.findIndex(l=>l.id===item.layerId);
   el.style.zIndex=(layerIdx>=0?(layerIdx+1)*1000:1000)+(item.z||1);
   // Preserve selection state
@@ -2351,6 +2368,13 @@ function makeDraggable(el,item){
     if(!S.selectedIds.has(item.id)){
       clearSelection();state_selectedAdd(item.id,el);
     }
+    // Angeklicktes Element immer in den Vordergrund bringen
+    bringToFront(item);
+
+    const dragPointerId = e.pointerId;
+    // setPointerCapture: verhindert dass andere Items pointermove-Events abfangen
+    try{ el.setPointerCapture(dragPointerId); }catch(_){}
+
     const startX=e.clientX,startY=e.clientY;
     // Startpositionen ALLER selektierten Items merken
     const startPositions=[...S.selectedIds].map(sid=>{
@@ -2359,11 +2383,19 @@ function makeDraggable(el,item){
     }).filter(Boolean);
     let moved=false;
     const onMove=ev=>{
+      // Nur eigenen Pointer verarbeiten — verhindert Kopplung bei Multi-Touch
+      if(ev.pointerId!==dragPointerId) return;
+      // Wenn Pinch aktiv (2+ Pointer), Drag abbrechen
+      if(_pointers.size>=2) return;
       const dx=(ev.clientX-startX)/S.zoom,dy=(ev.clientY-startY)/S.zoom;
       if(Math.abs(dx)>2||Math.abs(dy)>2) moved=true;
       startPositions.forEach(({id,x,y})=>{
         const it=S.items.find(z=>z.id===id);const domEl=$('item-'+id);
-        if(it&&domEl){it.x=x+dx;it.y=y+dy;domEl.style.left=it.x+'px';domEl.style.top=it.y+'px';}
+        if(!it||!domEl) return;
+        // Gesperrte Ebene: Element nicht mitbewegen
+        const lyr=S.layers.find(l=>l.id===it.layerId);
+        if(lyr&&lyr.locked) return;
+        it.x=x+dx;it.y=y+dy;domEl.style.left=it.x+'px';domEl.style.top=it.y+'px';
       });
       // Highlight folder under cursor if dragging file/image
       const draggingFileOrImg=[...S.selectedIds].some(sid=>{const it=S.items.find(x=>x.id===sid);return it&&['file','image'].includes(it.type);});
@@ -2376,7 +2408,11 @@ function makeDraggable(el,item){
     };
     const startPositions_undo=startPositions.map(p=>({...p}));
     const onUp=ev=>{
-      window.removeEventListener('pointermove',onMove);window.removeEventListener('pointerup',onUp);
+      if(ev.pointerId!==dragPointerId) return;
+      try{ el.releasePointerCapture(dragPointerId); }catch(_){}
+      el.removeEventListener('pointermove',onMove);
+      el.removeEventListener('pointerup',onUp);
+      el.removeEventListener('pointercancel',onUp);
       // Check if dropped on a folder icon
       if(moved){
         // Undo für alle bewegten Items (nur erstes im Stack — vereinfacht)
@@ -2421,7 +2457,10 @@ function makeDraggable(el,item){
         scheduleSave();
       }
     };
-    window.addEventListener('pointermove',onMove);window.addEventListener('pointerup',onUp);
+    // Events am Element statt window → isoliert pro Element
+    el.addEventListener('pointermove',onMove);
+    el.addEventListener('pointerup',onUp);
+    el.addEventListener('pointercancel',onUp);
   });
 }
 
@@ -3381,17 +3420,7 @@ document.addEventListener('keydown',e=>{
   // F11 → Vollbild umschalten
   if(e.key==='F11'){
     e.preventDefault();
-    try{
-      if(window.__TAURI__&&window.__TAURI__.core){
-        window.__TAURI__.core.invoke('plugin:window|is_fullscreen').then(full=>{
-          window.__TAURI__.core.invoke('plugin:window|set_fullscreen',{value:!full});
-        }).catch(()=>{});
-      } else if(document.fullscreenElement){
-        document.exitFullscreen();
-      } else {
-        document.documentElement.requestFullscreen();
-      }
-    }catch(_){}
+    togglePresentation();
     return;
   }
   if(isTyping()) return;
@@ -3681,19 +3710,34 @@ function commitBoardRename(){const d=$('board-name-display'),i=$('board-name-inp
 function togglePresentation(){
   S.presentation=!S.presentation;
   if(S.presentation){
-    // Hide only header and board panel — toolbar and all editing tools stay visible
-    ['header','board-panel'].forEach(id=>{
-      const el=$(id);if(el)el.style.display='none';
-    });
+    // Titelleiste (OS-Fensterrahmen) entfernen via Fullscreen API
+    if(window.__TAURI__&&window.__TAURI__.core){
+      window.__TAURI__.core.invoke('plugin:window|set_fullscreen',{value:true}).catch(()=>{});
+    } else {
+      document.documentElement.requestFullscreen?.().catch(()=>{});
+    }
+    ['header','board-panel'].forEach(id=>{const el=$(id);if(el)el.style.display='none';});
     canvasWrap.style.top='0';
   } else {
-    ['header','board-panel'].forEach(id=>{
-      const el=$(id);if(el)el.style.display='';
-    });
+    if(window.__TAURI__&&window.__TAURI__.core){
+      window.__TAURI__.core.invoke('plugin:window|set_fullscreen',{value:false}).catch(()=>{});
+    } else {
+      document.fullscreenElement&&document.exitFullscreen();
+    }
+    ['header','board-panel'].forEach(id=>{const el=$(id);if(el)el.style.display='';});
     canvasWrap.style.top='';
   }
   $('present-btn').classList.toggle('active',S.presentation);
 }
+// Sync wenn User ESC drückt und Fullscreen von außen beendet wird
+document.addEventListener('fullscreenchange',()=>{
+  if(!document.fullscreenElement&&S.presentation){
+    S.presentation=false;
+    ['header','board-panel'].forEach(id=>{const el=$(id);if(el)el.style.display='';});
+    canvasWrap.style.top='';
+    $('present-btn')?.classList.remove('active');
+  }
+});
 
 function setBgColor(hex){
   S.bgColor=hex;
@@ -4036,7 +4080,11 @@ function applyLayerOrder(){
   S.layers.forEach((layer,i)=>{
     S.items.filter(it=>it.layerId===layer.id).forEach(it=>{
       const el=$('item-'+it.id);
-      if(el) el.style.zIndex=(i+1)*1000+(it.z||1);
+      if(el){
+        const isSelected=S.selectedIds.has(it.id);
+        // Selektierte/aktive Items bekommen +500 innerhalb ihres Bandes
+        el.style.zIndex=(i+1)*1000+(it.z||1)+(isSelected?500:0);
+      }
     });
     // SVG-z innerhalb von draw-layers (relativ zueinander)
     const svg=document.getElementById('layer-svg-'+layer.id);
