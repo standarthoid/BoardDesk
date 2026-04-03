@@ -24,7 +24,7 @@
   --accent:#00e5c3;--accent2:#ff6b35;--accent3:#a855f7;
   --text:#e8eaf0;--text-dim:#7a7f94;--text-dimmer:#454a5c;
   --radius:10px;--shadow:0 8px 32px rgba(0,0,0,.5);
-  --header-h:46px;
+  --header-h:52px;
   --wco-top: 0px;
   --wco-h: 0px;
   --mono:'Cascadia Code','JetBrains Mono','Fira Code',Consolas,'Courier New',monospace;
@@ -45,13 +45,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 
 /* ── HEADER ── */
 #header{
-  position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:10000;touch-action:auto;
+  position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:10000;
+  touch-action:manipulation;
   display:flex;align-items:center;padding:0 14px;gap:8px;
   background:rgba(14,15,17,.93);border-bottom:1px solid var(--border);
   backdrop-filter:blur(12px);transition:transform .3s;
-  top: 0;
-  height: var(--header-h);
-  padding-top: 0;
+  /* Pointer-Events explizit auf all setzen — verhindert dass Canvas-Layer den Header überschattet */
+  pointer-events:all;
   /* -webkit-app-region: drag; — deaktiviert wegen Windows-Kompatibilität */
 }
 /* Buttons must NOT be draggable */
@@ -71,17 +71,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .hdr-space{flex:1;}
 #zoom-display{font-size:11px;font-family:var(--mono);color:var(--text-dimmer);min-width:44px;text-align:right;}
 .hdr-btn{
-  font-size:11px;font-family:var(--mono);padding:5px 11px;border-radius:8px;
+  font-size:11px;font-family:var(--mono);padding:0 11px;border-radius:8px;
   border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);
   cursor:pointer;transition:all .15s;flex-shrink:0;
+  /* Samsung Flip: große Touch-Targets, kein Gesture-Hijacking */
+  min-height:38px;touch-action:manipulation;user-select:none;
+  display:flex;align-items:center;justify-content:center;
 }
 .hdr-btn:hover{border-color:var(--accent);color:var(--accent);}
 .hdr-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(0,229,195,.08);}
 
 /* ── CANVAS ── */
 #canvas-wrap{
-  position:fixed;top:var(--header-h);left:0;right:0;bottom:0;overflow:hidden;cursor:default;z-index:1;
+  position:fixed;top:var(--header-h);left:0;right:0;bottom:0;overflow:hidden;cursor:default;
   z-index:1;transition:top .3s;background:transparent;touch-action:none;
+  /* Verhindert dass der Canvas-Bereich in die Header-Zone ragt */
+  min-top:var(--header-h);
 }
 #canvas-wrap.presentation{top:0 !important;}
 #canvas{position:absolute;width:12000px;height:12000px;transform-origin:0 0;touch-action:none;will-change:transform;}
@@ -475,20 +480,50 @@ window._pdfjsReady = (function(){
 </head>
 <body>
 <script>
-// Windows WebView2 onclick-Polyfill
-document.addEventListener('click', function(e){
-  var el = e.target;
-  var depth = 0;
-  while(el && el !== document.body && depth++ < 8){
-    var handler = el.getAttribute('data-onclick');
-    if(handler){
-      try{ (new Function(handler)).call(el); }
-      catch(err){ console.error('data-onclick err:', err.message, handler.slice(0,60)); }
-      break;
+// Samsung Flip / Windows WebView2 onclick-Polyfill
+// Nutzt pointerup statt click — click kann auf Touch-Geräten suppressed werden
+// wenn irgendwo preventDefault() aufgerufen wird (z.B. im Canvas-PanHandler).
+(function(){
+  var _pdStart = null; // Startposition des Pointer-Downs
+  document.addEventListener('pointerdown', function(e){
+    _pdStart = {x:e.clientX, y:e.clientY, id:e.pointerId};
+  }, {capture:true, passive:true});
+
+  function _runDataOnclick(target){
+    var el = target;
+    var depth = 0;
+    while(el && el !== document.body && depth++ < 8){
+      var handler = el.getAttribute('data-onclick');
+      if(handler){
+        try{ (new Function(handler)).call(el); }
+        catch(err){ console.error('data-onclick err:', err.message, handler.slice(0,60)); }
+        return true;
+      }
+      el = el.parentElement;
     }
-    el = el.parentElement;
+    return false;
   }
-}, false);
+
+  // pointerup: feuert zuverlässig auch wenn click unterdrückt wird
+  document.addEventListener('pointerup', function(e){
+    // Nur auslösen wenn keine signifikante Bewegung stattfand (kein Drag)
+    if(_pdStart && _pdStart.id === e.pointerId){
+      var dx = Math.abs(e.clientX - _pdStart.x);
+      var dy = Math.abs(e.clientY - _pdStart.y);
+      if(dx < 12 && dy < 12){
+        _runDataOnclick(e.target);
+      }
+    }
+  }, {capture:false});
+
+  // click als Fallback für Maus (verhindert Doppelausführung bei Touch durch Flag)
+  document.addEventListener('click', function(e){
+    // Nur für Maus-Events — Touch/Pen wird bereits via pointerup behandelt
+    if(e.pointerType === 'mouse' || e.detail > 0){
+      _runDataOnclick(e.target);
+    }
+  }, false);
+})();
 </script>
 
 <!-- BOARD MANAGER PANEL -->
@@ -757,23 +792,24 @@ function s2c(sx,sy){return{x:(sx-S.panX)/S.zoom,y:(sy-S.panY)/S.zoom};}
 function centerPos(rx,ry){
   const r=canvasWrap.getBoundingClientRect();
   const vw=r.width||window.innerWidth;
-  const vh=r.height||(window.innerHeight-50);
-  // Convert viewport center to canvas coordinates
+  const vh=r.height||(window.innerHeight-52);
+  // Viewport-Mittelpunkt in Canvas-Koordinaten umrechnen
   const cx=vw/2+(rx||0);
   const cy=vh/2+(ry||0);
   const pos=s2c(cx,cy);
-  // Clamp to reasonable canvas area (0 to 10000)
-  return {x:Math.max(0,Math.min(10000,pos.x)), y:Math.max(0,Math.min(10000,pos.y))};
+  return {x:pos.x, y:pos.y};
 }
 function ensureVisible(item){
+  // Neues Item immer mittig anzeigen — verhindert dass Items außerhalb des Sichtfelds landen
   const r=canvasWrap.getBoundingClientRect();
   const vw=r.width||window.innerWidth;
-  const vh=r.height||(window.innerHeight-46);
+  const vh=r.height||(window.innerHeight-52);
   const cx=item.x+(item.w||120)/2;
   const cy=item.y+(item.h||80)/2;
   const sx=S.panX+cx*S.zoom;
   const sy=S.panY+cy*S.zoom;
-  const margin=40;
+  const margin=60;
+  // Nur panen wenn Item wirklich außerhalb des Sichtfelds liegt
   if(sx<margin||sx>vw-margin||sy<margin||sy>vh-margin){
     S.panX=vw/2-cx*S.zoom;
     S.panY=vh/2-cy*S.zoom;
@@ -1021,11 +1057,13 @@ function _onCanvasPointerDown(e){
   }
 
   // Deselect SVG shapes on empty canvas click
-  if(ne.target===canvasWrap||ne.target.id==='canvas'||ne.target.id==='items-layer'){
+  if(ne.target===canvasWrap||ne.target.id==='canvas'||ne.target.id==='items-layer'||ne.target.id==='grid-overlay'){
     document.querySelectorAll('.svg-selected').forEach(x=>x.classList.remove('svg-selected'));
     document.querySelectorAll('.svg-resize-handle').forEach(h=>h.remove());
     const sp=$('stroke-picker');if(sp&&!DRAW_TOOLS.includes(S.tool)) sp.classList.remove('open');
     const tp=$('text-picker');if(tp) tp.style.display='none';
+    // Auswahl aufheben wenn auf leeren Canvas geklickt wird
+    if(S.tool==='select' && S.selectedIds.size>0) clearSelection();
   }
 
   // Middle button or pan tool = pan
@@ -3245,30 +3283,31 @@ function endFolderDragOut(e){
   document.body.style.cursor='';
   const dx=Math.abs(e.clientX-fdDrag.startX),dy=Math.abs(e.clientY-fdDrag.startY);
   if(dx>15||dy>15){
+    // Exakter Drop-Punkt in Canvas-Koordinaten
     const p=cpt(e);
     const folder=S.items.find(i=>i.id===fdDrag.folderId);
     if(folder){
       const fo=fdDrag.fileObj;
       const name=fdDrag.name;
-      // Create item FIRST, then remove from folder (prevents data loss on error)
       let newCanvasItem;
       try {
         if(typeof fo==='object'&&fo.fileData&&isImageFile(name)){
-          newCanvasItem=createItem('image',{src:fo.fileData,name,x:p.x-100,y:p.y-75,w:200,h:150});
+          const iw=200,ih=150;
+          // Item zentriert auf Cursor ablegen
+          newCanvasItem=createItem('image',{src:fo.fileData,name,x:p.x-iw/2,y:p.y-ih/2,w:iw,h:ih});
         } else {
-          const newItem={name,x:p.x-45,y:p.y-55};
+          const fw=110,fh=110;
+          const newItem={name,x:p.x-fw/2,y:p.y-fh/2};
           if(typeof fo==='object'&&fo.fileData) newItem.fileData=fo.fileData;
           newCanvasItem=createItem('file',newItem);
         }
-        ensureVisible(newCanvasItem);
-        // Only remove from folder after successful creation
+        // kein ensureVisible — der Drop-Punkt ist per Definition im Sichtfeld
         folder.children.splice(fdDrag.fileIdx,1);
         renderItem(folder);
         if(_folderWindows[folder.id]) _folderWindows[folder.id]._rebuild();
         scheduleSave();
       } catch(err) {
         console.error('Folder drag failed:', err);
-        if(newCanvasItem) { S.items=S.items.filter(x=>x.id!==newCanvasItem.id); renderItem; }
       }
     }
   }
@@ -3340,11 +3379,8 @@ function bringToFront(item){
   const sameLayer=S.items.filter(i=>i.layerId===item.layerId);
   const maxZ=Math.max(...sameLayer.map(i=>i.z||0),0);
   item.z=maxZ+1;
-  const layerIdx=S.layers.findIndex(l=>l.id===item.layerId);
-  const band=(layerIdx>=0?(layerIdx+1)*1000:1000);
-  const el=$('item-'+item.id);
-  if(el) el.style.zIndex=band+item.z;
-  // SVG bleibt bei 800 — Item mit z>800 liegt über SVG-Zeichnungen
+  // Vollständige Neuberechnung aller z-Indizes (inkl. Selektions-Boost)
+  applyLayerOrder();
   scheduleRenderLayerList();
   scheduleSave();
 }
@@ -3459,8 +3495,10 @@ function updateMultiBar(){
   const bar=document.getElementById('multi-select-bar');
   const count=document.getElementById('multi-select-count');
   if(!bar) return;
+  // Nicht anzeigen wenn Layer-Panel offen ist
+  const layerPanelOpen=$('layer-panel')?.classList.contains('open');
   const n=S.selectedIds.size;
-  if(n>1){bar.style.display='flex';count.textContent=n+' ausgewählt';}
+  if(n>1&&!layerPanelOpen){bar.style.display='flex';if(count)count.textContent=n+' ausgewählt';}
   else bar.style.display='none';
 }
 function deleteMultiSelected(){
@@ -3476,10 +3514,7 @@ function sendToBackById(id){
   const sameLayer=S.items.filter(i=>i.layerId===item.layerId);
   const minZ=Math.min(...sameLayer.map(i=>i.z||0),1);
   item.z=Math.max(0,minZ-1);
-  const layerIdx=S.layers.findIndex(l=>l.id===item.layerId);
-  const band=(layerIdx>=0?(layerIdx+1)*1000:1000);
-  const el=$('item-'+id);
-  if(el) el.style.zIndex=band+item.z;
+  applyLayerOrder();
   scheduleSave();
 }
 function addFileToFolder(folderId){
@@ -3515,7 +3550,7 @@ function addNote(){addNoteAt();}
 function addNoteAt(x,y){
   const pos=x!==undefined?{x,y}:centerPos();
   const item=createItem('note',{x:pos.x-120,y:pos.y-80,w:240,h:180,text:'',colorIdx:0,fontSize:13,font:'sans-serif'});
-  if(x===undefined) ensureVisible(item);
+  ensureVisible(item);
   setTimeout(()=>{const ta=$('item-'+item.id)?.querySelector('textarea');if(ta)ensureKeyboard(ta);},80);
 }
 function openFolderModal(){openFolderModalAt();}
@@ -3710,22 +3745,19 @@ function commitBoardRename(){const d=$('board-name-display'),i=$('board-name-inp
 function togglePresentation(){
   S.presentation=!S.presentation;
   if(S.presentation){
-    // Titelleiste (OS-Fensterrahmen) entfernen via Fullscreen API
+    // Nur OS-Titelleiste entfernen — App-Header und Toolbar bleiben sichtbar
     if(window.__TAURI__&&window.__TAURI__.core){
       window.__TAURI__.core.invoke('plugin:window|set_fullscreen',{value:true}).catch(()=>{});
     } else {
       document.documentElement.requestFullscreen?.().catch(()=>{});
     }
-    ['header','board-panel'].forEach(id=>{const el=$(id);if(el)el.style.display='none';});
-    canvasWrap.style.top='0';
+    // canvasWrap bleibt bei header-h (App-Header bleibt sichtbar)
   } else {
     if(window.__TAURI__&&window.__TAURI__.core){
       window.__TAURI__.core.invoke('plugin:window|set_fullscreen',{value:false}).catch(()=>{});
     } else {
       document.fullscreenElement&&document.exitFullscreen();
     }
-    ['header','board-panel'].forEach(id=>{const el=$(id);if(el)el.style.display='';});
-    canvasWrap.style.top='';
   }
   $('present-btn').classList.toggle('active',S.presentation);
 }
@@ -3733,8 +3765,6 @@ function togglePresentation(){
 document.addEventListener('fullscreenchange',()=>{
   if(!document.fullscreenElement&&S.presentation){
     S.presentation=false;
-    ['header','board-panel'].forEach(id=>{const el=$(id);if(el)el.style.display='';});
-    canvasWrap.style.top='';
     $('present-btn')?.classList.remove('active');
   }
 });
@@ -3756,7 +3786,21 @@ function setBgColor(hex){
 // ═══════════════════════════════════════════════
 function toggleLayerPanel(){
   const p=$('layer-panel');
-  if(p) p.classList.toggle('open');
+  if(!p) return;
+  const isOpening=!p.classList.contains('open');
+  p.classList.toggle('open');
+  // Multi-Select-Bar ausblenden wenn Layer-Panel offen (sonst überlagern sie sich)
+  const msbar=document.getElementById('multi-select-bar');
+  if(msbar){
+    if(isOpening){
+      msbar.dataset.hiddenByLayer='1';
+      msbar.style.display='none';
+    } else {
+      delete msbar.dataset.hiddenByLayer;
+      // Nur wieder einblenden wenn wirklich Items selektiert sind
+      if(S.selectedIds.size>1) msbar.style.display='flex';
+    }
+  }
   renderLayerList();
 }
 function getItemIcon(item){
@@ -4129,15 +4173,17 @@ function editTextLabelById(id){const el=$('item-'+id);const item=S.items.find(i=
 function moveItemToLayer(itemId,layerId){
   const item=S.items.find(i=>i.id===itemId);if(!item)return;
   item.layerId=layerId;
+  const layer=S.layers.find(l=>l.id===layerId);
   const el=$('item-'+itemId);
   if(el){
-    const layerIdx=S.layers.findIndex(l=>l.id===layerId);
-    el.style.zIndex=(layerIdx>=0?(layerIdx+1)*100:1)+(item.z||0);
-    const layer=S.layers.find(l=>l.id===layerId);
-    if(layer&&!layer.visible)el.style.display='none';
+    if(layer&&!layer.visible) el.style.display='none';
     else el.style.display='';
+    if(layer&&layer.locked) el.style.pointerEvents='none';
+    else el.style.pointerEvents='';
   }
+  applyLayerOrder();
   ctxMenu.style.display='none';
+  renderLayerList();
   scheduleSave();
 }
 
